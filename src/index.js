@@ -294,10 +294,21 @@ SftpClient.prototype.mkdir = function(path, recursive = false) {
   if (!recursive) {
     return doMkdir(path);
   }
+
+  let is_root = p => {
+      if (null === p || typeof(p) === 'undefined') { return true; }
+      if (p === '' || p === '/' || p === '.') { return true; }
+      return false;
+  };
+
+  let fixed_exists = p => {
+    return is_root(osPath.normalize(p)) ? Promise.resolve(true) : this.exists(p);
+  };
+
   let mkdir = p => {
-      let {dir} = osPath.parse(p);
-      return this.exists(dir).then((type) => {
-        if (!type) {
+      let { dir } = osPath.parse(p);
+      fixed_exists(dir).then((e) => {
+        if (!e) {
           return mkdir(dir);
         }
       }).then(() => {
